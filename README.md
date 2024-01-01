@@ -68,10 +68,11 @@ This gives us precise results and works well until `N ~ 20`.
 The result for `N = 22`: `63.21060%`.
 
 An interesting observation:
-* Zen3, Zen4 seem to have some optimization to speed this up very
-  significantly. Maybe better cache handling or better optimized
-  floating point multiplications. It beats TigerLake by a factor of 5.
-  (I have not tested Skylake or AlderLake nor Zen < 3 nor ARM.)
+* Zen 2, Zen3, Zen4 seem to have some optimization to speed this up very
+  significantly. Maybe better cache handling or better optimized floating
+  point multiplications (FMA?). It beats TigerLake by a factor
+  of 10 .. 100(!).
+  (I have not tested Skylake or AlderLake nor Zen < 2 nor ARM.)
 * With gcc-12, Zen is as slow as Tigerlake. gcc-7.5 (SUSE), gcc-11,
   gcc-13 and master (pre-14) don't exhibit the slowliness. The reason
   is not obvious from a quick look at the disassembly.
