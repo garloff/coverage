@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 		total += dist[ix];
 		//printf(FMT " ", dist[(maxln-1)*maxln+ix]);
 	}
-	printf("\n%f\n", 100.0*exp/total/maxln);
+	printf("\n%f%%\n", 100.0*exp/total/maxln);
 	/*
 	printf("DEBUG: Opts counted " FMT ", calculated " FMT ", scale = 1/" FMT "\n",
 		total, pow((double)maxln*scale,maxln-1), 1.0/scale);
