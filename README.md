@@ -75,10 +75,17 @@ An interesting observation:
   Something is strange here on intel. Problems with cache handling?
   Confused hw prefetcher? Slowliness on FP multiplication or FMA?
 * With gcc-12, Zen is as 5x slower than with gcc-7.5 (SUSE), gcc-11,
-  gcc-13 and master (pre-14). The reason is not obvious from a quick
-  look at the disassembly.
+  gcc-13 and master (pre-14). Analyzing the assembly, we see that
+  gcc-13 writes back the two results (in `freq_one_step()`) with
+  two individual `movsd` instructions. gcc-12 uses `unpcklpd`
+  to gather both values in one xmm register and writes both back
+  with a single `movups` instruction. This seems to be much slower,
+  maybe because we create a depencency between the two calculations
+  or maybe because the unaligned write instruction is slow or both.
 * llvm (clang) 15 and 17 produce a bit faster code than gcc when
   optimizing for the (znver3/4) CPU (-march=native).
+  llvm produces FMA (`vfmadd231sd`) instructions, which gives the
+  best performance.
 * You can play with `-DPREFETCH=0` or even `-D PREFETCH=64`. The latter
   will hurt performance on Zen, whereas the first seem to help a tiny
   bit.

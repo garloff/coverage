@@ -139,7 +139,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 
 void usage()
 {
-	fprintf(stderr, "Usage: chain N\n");
+	fprintf(stderr, "Usage: chains2 N\n");
 	exit(1);
 }
 
