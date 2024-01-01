@@ -62,11 +62,13 @@ inline void freq_one_step(datatp* dist, const datatp infact,
 
 #ifndef NO_SPLIT_LOOP
 #define SPLIT_LOOP_BREAK break
+#define LASTVAR lastvar
 #else
 #define SPLIT_LOOP_BREAK do {} while(0)
+#define LASTVAR step
 #endif
 
-void calcnet(datatp* dist, const ctrtp opts)
+ctrtp calcnet(datatp* dist, const ctrtp opts)
 {
 	PREFETCH1(dist, 1, 3);
 	dist[0] = 1;
@@ -77,15 +79,15 @@ void calcnet(datatp* dist, const ctrtp opts)
 	for (ctrtp step = 1; step < opts; ++step) {
 		ctrtp var = start;
 		PREFETCH8(dist+start-1, 0, 2);
-		double nextinfact = dist[var-1]*scale;
+		double nextinfact = dist[var-1];
 		dist[var-1] = 0;
 		if (!(step%1024)) {
-			printf("Layer %i \r", step);
+			printf("Layer %i (%i .. %i) \r", step, start, LASTVAR);
 			fflush(stdout);
 		}
 #ifndef NO_SPLIT_LOOP
 		for (; var <= step && nextinfact == (datatp)0; ++var) {
-			nextinfact = dist[var]*scale;
+			nextinfact = dist[var];
 			/* It could be that we only get to 0 b/c scale mult, so clear */
 			dist[var] = 0;
 		}
@@ -93,28 +95,28 @@ void calcnet(datatp* dist, const ctrtp opts)
 		/* No testing for zero until lastvar */
 		for (; var <= lastvar; ++var) {
 			const double infact = nextinfact;
-			nextinfact = dist[var]*scale;
+			nextinfact = dist[var];
 			//dist[var] = 0;
 #if PREFETCH != 0
 			//if (!(var%8))
 			PREFETCH1(dist+(var+PREFETCH)%step, 0, 2);
 #endif
-			freq_one_step(dist, infact, var, opts);
+			freq_one_step(dist, infact*scale, var, opts);
 		}
 #endif
 		for (; var <= step; ++var) {
 			const double infact = nextinfact;
-			nextinfact = dist[var]*scale;
+			nextinfact = dist[var];
 			//dist[var] = 0;
 #if PREFETCH != 0
 			//if (!(var%8))
 			PREFETCH1(dist+(var+PREFETCH)%step, 0, 2);
 #endif
 #if !defined(TEST_NONZERO) && defined(NO_SPLIT_LOOP)
-			freq_one_step(dist, infact, var, opts);
+			freq_one_step(dist, infact*scale, var, opts);
 #else
 			if (infact != (datatp)0)
-				freq_one_step(dist, infact, var, opts);
+				freq_one_step(dist, infact*scale, var, opts);
 			else {
 				dist[var] = 0;
 				SPLIT_LOOP_BREAK;
@@ -131,6 +133,7 @@ void calcnet(datatp* dist, const ctrtp opts)
 		//printf("DEBUG: %i: %i,%i\n", step, start, lastvar);
 #endif
 	}
+	return start;
 }
 
 
@@ -165,19 +168,20 @@ int main(int argc, char *argv[])
 #endif
 	//printf("%p\n", dist);
 	scale = pow(maxln,(maxln-3.0)/(1.0-maxln));
-	calcnet(dist, maxln);
+	ctrtp first = calcnet(dist, maxln);
 	//ulong total = 0;
 	datatp total = 0;
 	datatp exp = 0;
-	for (ctrtp ix = 0; ix < maxln; ++ix) {
+	for (ctrtp ix = first-1; ix < maxln; ++ix) {
 		exp += (ix+1)*dist[ix];
 		total += dist[ix];
 		//printf(FMT " ", dist[(maxln-1)*maxln+ix]);
 	}
 	printf("\n%f\n", 100.0*exp/total/maxln);
+	/*
 	printf("DEBUG: Opts counted " FMT ", calculated " FMT ", scale = 1/" FMT "\n",
 		total, pow((double)maxln*scale,maxln-1), 1.0/scale);
-	//assert(fabs(total-ipow(maxln, maxln-1))/total < 0.001);
+	 */
 	assert(fabs(total-pow((double)maxln*scale,maxln-1))/total < 0.001);
 	free(dist);
 	return 0;
