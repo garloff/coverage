@@ -68,14 +68,15 @@ This gives us precise results and works well until `N ~ 20`.
 The result for `N = 22`: `63.21060%`.
 
 An interesting observation:
-* Zen 2, Zen3, Zen4 seem to have some optimization to speed this up very
-  significantly. Maybe better cache handling or better optimized floating
-  point multiplications (FMA?). It beats TigerLake by a factor
-  of 10 .. 100(!).
-  (I have not tested Skylake or AlderLake nor Zen < 2 nor ARM.)
-* With gcc-12, Zen is as slow as Tigerlake. gcc-7.5 (SUSE), gcc-11,
-  gcc-13 and master (pre-14) don't exhibit the slowliness. The reason
-  is not obvious from a quick look at the disassembly.
+* intel Haswell up to and including TigerLake is really slow on this.
+  A factor 10 ... 100 slower than Zen 2, 3, 4. (I have not been able
+  to test Zen 1 nore intel AlderLake or MeteorLake.) ARM Cortex-A76
+  (Orange Pi 5) and A715 are fast.
+  Something is strange here on intel. Problems with cache handling?
+  Confused hw prefetcher? Slowliness on FP multiplication or FMA?
+* With gcc-12, Zen is as 5x slower than with gcc-7.5 (SUSE), gcc-11,
+  gcc-13 and master (pre-14). The reason is not obvious from a quick
+  look at the disassembly.
 * llvm (clang) 15 and 17 produce a bit faster code than gcc when
   optimizing for the (znver3/4) CPU (-march=native).
 * You can play with `-DPREFETCH=0` or even `-D PREFETCH=64`. The latter
