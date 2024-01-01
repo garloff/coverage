@@ -72,6 +72,11 @@ An interesting observation:
   significantly. Maybe better cache handling or better optimized
   floating point multiplications. It beats TigerLake by a factor of 5.
   (I have not tested Skylake or AlderLake nor Zen < 3 nor ARM.)
+* With gcc-12, Zen is as slow as Tigerlake. gcc-7.5 (SUSE), gcc-11,
+  gcc-13 and master (pre-14) don't exhibit the slowliness. The reason
+  is not obvious from a quick look at the disassembly.
+* llvm (clang) 15 and 17 produce a bit faster code than gcc when
+  optimizing for the (znver3/4) CPU (-march=native).
 * You can play with `-DPREFETCH=0` or even `-D PREFETCH=64`. The latter
   will hurt performance on Zen, whereas the first seem to help a tiny
   bit.

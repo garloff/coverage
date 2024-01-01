@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -O2 -Wall $(EXTRA_CFLAGS)
-OPTFLAGS = -O3 -Wall -march=native
+OPTFLAGS = -O3 -Wall -march=native $(EXTRA_CFLAGS)
 
 TARGETS = dist comb chains chains2
 

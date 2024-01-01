@@ -157,7 +157,9 @@ int main(int argc, char *argv[])
 	ctrtp maxln = atoi(argv[1]);
 #ifdef USE_VALLOC
 	datatp *dist = valloc(maxln * sizeof(datatp));
-	//memset(dist, 0, maxln * sizeof(datatp));
+#ifndef NO_SPLIT_LOOP
+	memset(dist, 0, maxln * sizeof(datatp));
+#endif
 #else
 	datatp *dist = calloc(maxln, sizeof(datatp));
 #endif
