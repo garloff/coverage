@@ -79,7 +79,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 	for (ctrtp step = 1; step < opts; ++step) {
 		ctrtp var = start;
 		PREFETCH8(dist+start-1, 0, 2);
-		double nextinfact = dist[var-1];
+		datatp nextinfact = dist[var-1];
 		dist[var-1] = 0;
 		if (!(step%1024)) {
 			printf("Layer %i (%i .. %i) \r", step, start, LASTVAR);
@@ -94,7 +94,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 		start = var;
 		/* No testing for zero until lastvar */
 		for (; var <= lastvar; ++var) {
-			const double infact = nextinfact;
+			const datatp infact = nextinfact;
 			nextinfact = dist[var];
 			//dist[var] = 0;
 #if PREFETCH != 0
@@ -105,7 +105,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 		}
 #endif
 		for (; var <= step; ++var) {
-			const double infact = nextinfact;
+			const datatp infact = nextinfact;
 			nextinfact = dist[var];
 			//dist[var] = 0;
 #if PREFETCH != 0
