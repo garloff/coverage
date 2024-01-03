@@ -30,22 +30,6 @@ typedef double datatp;
 //uchar scale;
 datatp scale;
 
-/* Output: A probability distribution at layer N
- * Inputs: infact: Probability factor (freq)
- *         variety: How many different digits do we have already?
- *         opts: How many different digits exist overall
- */
-inline void freq_one_step(datatp* dist, const datatp infact0, const datatp infact1,
-			  const ctrtp variety0, const ctrtp opts)
-{
-	//const ctrtp same  = variety;
-	const ctrtp same1 = variety0+1;
-	const ctrtp othr0 = opts-variety0;
-	//const ctrtp othr1 = opts-variety-1;
-	//dist[variety0-1] += infact*same;
-	dist[variety0 ]   = infact0*othr0 + infact1*same1;
-	//dist[variety0+1] = infact1*othr1;
-}
 
 #ifdef PREFETCH
 #define PREFETCH1(addr, rw, loc) __builtin_prefetch(addr, rw, loc)
@@ -71,6 +55,22 @@ inline void freq_one_step(datatp* dist, const datatp infact0, const datatp infac
 #define LASTVAR step
 #endif
 
+#ifdef FORCE_EVEN
+#define STARTOFFS (var>1? var%2: 0)
+#define ENDOFFS (var<step? var%2: 0)
+#else
+#define STARTOFFS 0
+#define ENDOFFS 0
+#endif
+
+/* Output: A probability distribution dist
+ * 	   (normalized to (maxln*scale)^(maxln-1)
+ * Inputs: Number of options opts
+ *
+ * We draw opts random numbers in the range 0 ... (opts-1)
+ * and caculate the probability distribution of observing
+ * N different numbers in dist[N-1].
+ */
 ctrtp calcnet(datatp* dist, const ctrtp opts)
 {
 	PREFETCH1(dist, 1, 3);
@@ -94,7 +94,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			dist[var] = 0;
 		}
 		dist[var-1] = nextinfact*var*scale;
-		start = var;	// -var%2;
+		start = var - STARTOFFS;
 		/* No testing for zero until lastvar */
 		for (; var <= lastvar; ++var) {
 			const datatp infact = nextinfact;
@@ -102,7 +102,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			//dist[var] = 0;
 #if PREFETCH != 0
 			//if (!(var%8))
-			PREFETCH1(dist+(var+PREFETCH)%step, 0, 2);
+			PREFETCH1(dist+var+PREFETCH, 0, 2);
 #endif
 			dist[var] = (infact*(opts-var) + nextinfact*(var+1))*scale;
 		}
@@ -121,7 +121,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			dist[var] = (infact*(opts-var) + nextinfact*(var+1))*scale;
 #else
 			if (infact != (datatp)0)
-				freq_one_step(dist, infact*scale, nextinfact*scale, var, opts);
+				dist[var] = (infact*(opts-var) + nextinfact*(var+1))*scale;
 			else {
 				dist[var] = 0;
 				SPLIT_LOOP_BREAK;
@@ -129,12 +129,8 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 #endif
 		}
 #ifndef NO_SPLIT_LOOP
-		/* Not needed, we have written a final 0 already if we have not reached the end
-		if (var < step)
-			dist[var+1] = 0;
-		*/
 		/* How long should we run branchless b/c we won't hit 0 */
-		lastvar = var-1;	// +var%2;
+		lastvar = var-1 + ENDOFFS;
 		//printf("DEBUG: %i: %i,%i\n", step, start, lastvar);
 #endif
 	}
@@ -147,16 +143,6 @@ void usage()
 	fprintf(stderr, "Usage: [-v] chains3 N\n");
 	exit(1);
 }
-
-/*
-datatp ipow(unsigned char base, unsigned char pwr)
-{
-	datatp res = 1;
-	for (unsigned char i = 0; i < pwr; ++i)
-		res *= base;
-	return res;
-}
-*/
 
 int main(int argc, char *argv[])
 {

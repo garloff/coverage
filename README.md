@@ -99,3 +99,21 @@ An interesting observation:
   `-DNO_SPLIT_LOOP` and benchmark the results on your CPU. The program
   will run 2--3x slower.
 
+### `chains3`
+
+Further(!) optimized version from chains.
+Rather than touching two values per iteration, do the complete
+math for one. This saves a write to a write buffer.
+It also produces cleaner code, making the compiler's job easier,
+e.g. when it tries to unroll the loop to extract further parallelism.
+chains3 is indeed faster than chains2. The `_p0` variant with
+preteching seems slower this time than the one without.
+
+Compiling with `-DFORCE_EVEN` forces start and end offsets of
+the split loops to be even, thus allowing for better unrolling
+or proving to the compiler that we can use aligned insns.
+
+gcc-12 is slower than gcc-13, but this time not by as much and it's
+not the unfortunate `unpcklpd` with `movups` this time.
+clang-17 is beating gcc-13 by a larger margin, not yet analyzed.
+
