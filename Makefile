@@ -2,12 +2,24 @@ CC = gcc
 CFLAGS = -g -O2 -Wall $(EXTRA_CFLAGS)
 OPTFLAGS = -O3 -Wall -march=native $(EXTRA_CFLAGS)
 
-TARGETS = dist comb chains chains2 chains2_o chains2_o_p0
+TARGETS = dist comb chains chains2 chains2_o chains2_o_p0 chains3 chains3_o chains3_o_p0
 
 default: $(TARGETS)
 
 %: %.o
 	$(CC) $(EXTRA_LDFLAGS) -o $@ $^
+
+chains3: chains3.o
+	$(CC) $(EXTRA_LDFLAGS) -o $@ $^ -lm
+
+chains3_o: chains3_o.o
+	$(CC) $(EXTRA_LDFLAGS) -o $@ $^ -lm
+
+chains3_o_p0: chains3_o_p0.o
+	$(CC) $(EXTRA_LDFLAGS) -o $@ $^ -lm
+
+chains3_pg: chains3_pg.o
+	$(CC) $(EXTRA_LDFLAGS) -o $@ $^ -lm -pg
 
 chains2: chains2.o
 	$(CC) $(EXTRA_LDFLAGS) -o $@ $^ -lm
