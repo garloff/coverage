@@ -139,7 +139,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 
 void usage()
 {
-	fprintf(stderr, "Usage: chains2 N\n");
+	fprintf(stderr, "Usage: chains2 [-v] N\n");
 	exit(1);
 }
 
@@ -155,6 +155,14 @@ datatp ipow(unsigned char base, unsigned char pwr)
 
 int main(int argc, char *argv[])
 {
+	int verbose = 0;
+	if (argc < 2)
+		usage();
+	if (!strcmp(argv[1], "-v")) {
+		++verbose;
+		--argc;
+		++argv;
+	}
 	if (argc < 2)
 		usage();
 	ctrtp maxln = atoi(argv[1]);
@@ -172,16 +180,18 @@ int main(int argc, char *argv[])
 	//ulong total = 0;
 	datatp total = 0;
 	datatp exp = 0;
+	if (verbose)
+		printf("(%i): ", first);
 	for (ctrtp ix = first-1; ix < maxln; ++ix) {
 		exp += (ix+1)*dist[ix];
 		total += dist[ix];
-		//printf(FMT " ", dist[(maxln-1)*maxln+ix]);
+		if (verbose)
+			printf(FMT " ", dist[ix]);
 	}
 	printf("\n%f%%\n", 100.0*exp/total/maxln);
-	/*
-	printf("DEBUG: Opts counted " FMT ", calculated " FMT ", scale = 1/" FMT "\n",
-		total, pow((double)maxln*scale,maxln-1), 1.0/scale);
-	 */
+	if (verbose)
+		printf("DEBUG: Opts counted " FMT ", calculated " FMT ", scale = 1/" FMT "\n",
+			total, pow((double)maxln*scale,maxln-1), 1.0/scale);
 	assert(fabs(total-pow((double)maxln*scale,maxln-1))/total < 0.001);
 	free(dist);
 	return 0;
