@@ -25,7 +25,7 @@ I did not find a nice analytic formula for this.
 
 But I designed several alogrithms to calculate the value.
 
-The answer seems to be `P = 63.21%` for large `N`.
+The answer seems to be `P = 63.212%` for large `N`.
 (Convergence is good, you get good approximation with `N ~ 14`,
  the percentages are slightly higher smaller `N`.)
 
@@ -103,7 +103,7 @@ An interesting observation:
 
 Further(!) optimized version from chains.
 Rather than touching two values per iteration, do the complete
-math for one. This saves a write to a write buffer.
+math for one. This saves a write (to a write buffer).
 It also produces cleaner code, making the compiler's job easier,
 e.g. when it tries to unroll the loop to extract further parallelism.
 chains3 is indeed faster than chains2. The `_p0` variant with
@@ -117,3 +117,6 @@ gcc-12 is slower than gcc-13, but this time not by as much and it's
 not the unfortunate `unpcklpd` with `movups` this time.
 clang-17 is beating gcc-13 by a larger margin, not yet analyzed.
 
+Intel also benefits from this optimization, maybe even a bit more,
+but TigerLake (and older) is still more than an order of magnitude
+behind modern ARM and AMD cores. Strange.

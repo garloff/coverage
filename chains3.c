@@ -81,7 +81,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 #endif
 	for (ctrtp step = 1; step < opts; ++step) {
 		ctrtp var = start;
-		PREFETCH8(dist+start-1, 0, 2);
+		PREFETCH8(dist+start%2, 0, 2);
 		datatp nextinfact = dist[var-1];
 		if (!(step%1024)) {
 			printf("Layer %i (%i .. %i) \r", step, start, LASTVAR);
