@@ -25,6 +25,7 @@
 typedef unsigned int ctrtp;
 typedef double datatp;
 #define FMT "%f"
+#define EFMT "%e"
 #define IFMT "%.0f"
 
 //uchar scale;
@@ -63,6 +64,15 @@ datatp scale;
 #define ENDOFFS 0
 #endif
 
+ /* Note: SAVE_SCALE results in more cutoff as the handling of underflows
+  * seems to be inconsistent. We can deal with this by testing
+  * for subnormals and always cut off once we are in the subnormals
+  * range ... then SAVE_SCALE does keep smaller numbers ...
+  */
+//#define ISZERO(v) v == (datatp)0
+//#define ISZERO(v) v < 2e-307
+#define ISZERO(v) (fpclassify(v) == FP_ZERO || fpclassify(v) == FP_SUBNORMAL)
+
 /* Output: A probability distribution dist
  * 	   (normalized to (maxln*scale)^(maxln-1)
  * Inputs: Number of options opts
@@ -79,6 +89,13 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 #ifndef NO_SPLIT_LOOP
 	ctrtp lastvar = 1;
 #endif
+#ifdef SAVE_SCALE
+	/* Only do scaling every 8th iteration to save mult ops */
+	const datatp scale8 = pow(scale, 8.0);
+#define MULTSCALE(val) (((step)%8)? val: val*scale8)
+#else
+#define MULTSCALE(val) (val*scale)
+#endif
 	for (ctrtp step = 1; step < opts; ++step) {
 		ctrtp var = start;
 		PREFETCH8(dist+start%2, 0, 2);
@@ -88,12 +105,11 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			fflush(stdout);
 		}
 #ifndef NO_SPLIT_LOOP
-		for (; var <= step && nextinfact == (datatp)0; ++var) {
+		for (; var <= step && ISZERO(nextinfact); ++var) {
 			nextinfact = dist[var];
-			/* It could be that we only get to 0 b/c scale mult, so clear */
 			dist[var] = 0;
 		}
-		dist[var-1] = nextinfact*var*scale;
+		dist[var-1] = MULTSCALE(nextinfact*var);
 		start = var - STARTOFFS;
 		/* No testing for zero until lastvar */
 		for (; var <= lastvar; ++var) {
@@ -104,10 +120,10 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			//if (!(var%8))
 			PREFETCH1(dist+var+PREFETCH, 0, 2);
 #endif
-			dist[var] = (infact*(opts-var) + nextinfact*(var+1))*scale;
+			dist[var] = MULTSCALE((infact*(opts-var) + nextinfact*(var+1)));
 		}
 #else
-		dist[var-1] = nextinfact*var*scale;
+		dist[var-1] = MULTSCALE(nextinfact*var);
 #endif
 		for (; var <= step; ++var) {
 			const datatp infact = nextinfact;
@@ -118,10 +134,10 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			PREFETCH1(dist+(var+PREFETCH)%step, 0, 2);
 #endif
 #if !defined(TEST_NONZERO) && defined(NO_SPLIT_LOOP)
-			dist[var] = (infact*(opts-var) + nextinfact*(var+1))*scale;
+			dist[var] = MULTSCALE((infact*(opts-var) + nextinfact*(var+1)));
 #else
-			if (infact != (datatp)0)
-				dist[var] = (infact*(opts-var) + nextinfact*(var+1))*scale;
+			if (!(ISZERO(infact)))
+				dist[var] = MULTSCALE((infact*(opts-var) + nextinfact*(var+1)));
 			else {
 				dist[var] = 0;
 				SPLIT_LOOP_BREAK;
@@ -171,19 +187,32 @@ int main(int argc, char *argv[])
 	//ulong total = 0;
 	datatp total = 0;
 	datatp exp = 0;
+#ifdef SAVE_SCALE
+	const datatp norm = pow((double)maxln*scale, (maxln-1)-(maxln-1)%8) * \
+			    pow((double)maxln, (maxln-1)%8);
+#else
+	const datatp norm = pow((double)maxln*scale, maxln-1);
+#endif
 	if (verbose)
 		printf("(%i): ", first);
 	for (ctrtp ix = first-1; ix < maxln; ++ix) {
 		exp += (ix+1)*dist[ix];
 		total += dist[ix];
 		if (verbose)
-			printf(FMT " ", dist[ix]);
+			printf(EFMT " ", dist[ix]*(1.0/norm));
+		if (first > 1 && ix > first+10 && dist[ix] == (datatp)0) {
+			if (verbose)
+				printf(":(%i) ", ix);
+			break;
+		}
 	}
 	printf("\n%f%%\n", 100.0*exp/total/maxln);
-	if (verbose)
+	if (verbose) {
 		printf("DEBUG: Opts counted " FMT ", calculated " FMT ", scale = 1/" FMT "\n",
-			total, pow((double)maxln*scale,maxln-1), 1.0/scale);
-	assert(fabs(total-pow((double)maxln*scale,maxln-1))/total < 0.001);
+			total, norm, 1.0/scale);
+		printf("DEBUG: prob(%i) = %e\n", maxln*16/25, dist[maxln*16/25-1]/norm);
+	}
+	assert(fabs(total-norm)/total < 0.001);
 	free(dist);
 	return 0;
 }
