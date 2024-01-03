@@ -120,3 +120,8 @@ clang-17 is beating gcc-13 by a larger margin, not yet analyzed.
 Intel also benefits from this optimization, maybe even a bit more,
 but TigerLake (and older) is still more than an order of magnitude
 behind modern ARM and AMD cores. Strange.
+
+OK, mystery solved: intel CPUs slow down like crazy once you have
+to deal with subnormals. Testing for them (see ISZERO macro in
+chains3) and avoiding most ops on subnormals results in performance
+that's on par with AMD and ARM.
