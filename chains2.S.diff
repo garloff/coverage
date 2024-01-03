@@ -1,0 +1,21 @@
+--- gcc13/chains2.S.orig	2024-01-03 07:24:25.035456246 +0000
++++ gcc13/chains2.S	2024-01-03 07:27:47.988466416 +0000
+@@ -119,12 +119,16 @@ calcnet:
+ 	addq	$8, %rcx
+ 	vcvtsi2sdq	%rsi, %xmm4, %xmm0
+ 	vfmadd213sd	(%rdx), %xmm2, %xmm0
++	# Inserted KG
++	vmovsd	%xmm0, (%rdx)
+ 	movl	%r13d, %esi
+ 	subl	%eax, %esi
+ 	vcvtsi2sdq	%rsi, %xmm4, %xmm3
+ 	vmulsd	%xmm2, %xmm3, %xmm3
+-	vunpcklpd	%xmm3, %xmm0, %xmm0
+-	vmovupd	%xmm0, (%rdx)
++	# Changed KG
++	#vunpcklpd	%xmm3, %xmm0, %xmm0
++	#vmovupd	%xmm0, (%rdx)
++	vmovsd	%xmm3, 8(%rdx)
+ 	leal	1(%rax), %edx
+ 	cmpl	%edx, %r14d
+ 	jb	.L13

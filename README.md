@@ -84,8 +84,13 @@ An interesting observation:
   or maybe because the unaligned write instruction is slow or both.
 * llvm (clang) 15 and 17 produce a bit faster code than gcc when
   optimizing for the (znver3/4) CPU (-march=native).
-  llvm produces FMA (`vfmadd231sd`) instructions, which gives the
-  best performance.
+  Both clang and gcc produce FMA (`vfmadd231sd`) instructions, which
+  seem to help. gcc-13 still uses the `unpacklpd, movups` insns to
+  write back the results in some places. Hand editing the assembly
+  closes half of the gap to clang (see chains2.S.diff).
+  The remaining difference seems to be that clang does some more
+  unrolling that allows it to process 4 values at a time at some
+  places (using AVX2 ymm 256bit registers).
 * You can play with `-DPREFETCH=0` or even `-D PREFETCH=64`. The latter
   will hurt performance on Zen, whereas the first seem to help a tiny
   bit.
