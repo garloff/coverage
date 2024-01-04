@@ -68,6 +68,13 @@ inline void freq_one_step(datatp* dist, const datatp infact,
 #define LASTVAR step
 #endif
 
+#ifdef AVOID_SUBNORMAL
+#define ISZERO(v) (fpclassify(v) == FP_ZERO || fpclassify(v) == FP_SUBNORMAL)
+#else
+#define ISZERO(v) (fpclassify(v) == FP_ZERO)
+//#define ISZERO(v) (v == (datatp)0)
+#endif
+
 ctrtp calcnet(datatp* dist, const ctrtp opts)
 {
 	PREFETCH1(dist, 1, 3);
@@ -86,7 +93,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 			fflush(stdout);
 		}
 #ifndef NO_SPLIT_LOOP
-		for (; var <= step && nextinfact == (datatp)0; ++var) {
+		for (; var <= step && ISZERO(nextinfact); ++var) {
 			nextinfact = dist[var];
 			/* It could be that we only get to 0 b/c scale mult, so clear */
 			dist[var] = 0;
@@ -115,7 +122,7 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 #if !defined(TEST_NONZERO) && defined(NO_SPLIT_LOOP)
 			freq_one_step(dist, infact*scale, var, opts);
 #else
-			if (infact != (datatp)0)
+			if (!ISZERO(infact))
 				freq_one_step(dist, infact*scale, var, opts);
 			else {
 				dist[var] = 0;
