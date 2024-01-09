@@ -69,11 +69,13 @@ The result for `N = 22`: `63.21060%`.
 
 An interesting observation:
 * intel Haswell up to and including TigerLake is really slow on this.
-  A factor 10 ... 100 slower than Zen 2, 3, 4. (I have not been able
-  to test Zen 1 nore intel AlderLake or MeteorLake.) ARM Cortex-A76
-  (Orange Pi 5) and A715 are fast.
+  A factor 10 ... 100 slower than Zen 1, 2, 3, 4. (I have not been able
+  to test intel AlderLake or MeteorLake.) ARM Cortex-A76 (Orange Pi 5)
+  and A715 are fast.
   Something is strange here on intel. Problems with cache handling?
   Confused hw prefetcher? Slowliness on FP multiplication or FMA?
+  Update: Slowliness comes from subnormals. Once we eliminate them
+  (as in `chains2_o_as`), we see intel comptetitive with AMD and ARM.
 * With gcc-12, Zen is as 5x slower than with gcc-7.5 (SUSE), gcc-11,
   gcc-13 and master (pre-14). Analyzing the assembly, we see that
   gcc-13 writes back the two results (in `freq_one_step()`) with
@@ -82,6 +84,7 @@ An interesting observation:
   with a single `movups` instruction. This seems to be much slower,
   maybe because we create a depencency between the two calculations
   or maybe because the unaligned write instruction is slow or both.
+  Update: Avoiding subnormals, the difference almost goes away.
 * llvm (clang) 15 and 17 produce a bit faster code than gcc when
   optimizing for the (znver3/4) CPU (-march=native).
   Both clang and gcc produce FMA (`vfmadd231sd`) instructions, which
