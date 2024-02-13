@@ -101,7 +101,8 @@ ctrtp calcnet(datatp* dist, const ctrtp opts)
 		PREFETCH8(dist+start%2, 0, 2);
 		datatp nextinfact = dist[var-1];
 		if (!(step%1024)) {
-			printf("Layer %i (%i .. %i) \r", step, start, LASTVAR);
+			printf("Layer %i (%i .. %i) %i%%\r", step, start, LASTVAR,
+				100*step/opts);
 			fflush(stdout);
 		}
 #ifndef NO_SPLIT_LOOP
@@ -162,6 +163,7 @@ void usage()
 
 int main(int argc, char *argv[])
 {
+	const double result = 1-exp(-1);
 	int verbose = 0;
 	if (argc < 2)
 		usage();
@@ -206,7 +208,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-	printf("\n%f%%\n", 100.0*exp/total/maxln);
+	printf("\n%.7f%%\n", 100.0*exp/total/maxln);
+	printf("%12.9f%% error\n", 100.0*(exp/total/maxln-result));
 	if (verbose) {
 		printf("DEBUG: Opts counted " FMT ", calculated " FMT ", scale = 1/" FMT "\n",
 			total, norm, 1.0/scale);

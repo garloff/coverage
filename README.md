@@ -29,6 +29,11 @@ The answer seems to be `P = 63.212%` for large `N`.
 (Convergence is good, you get good approximation with `N ~ 14`,
  the percentages are slightly higher smaller `N`.)
 
+Update: Not only do I have a math wizard as son, but he also has a
+brilliant friend. Thinking for a few minutes he "guessed" that the
+result for large `N` would be `1-1/e`. That makes
+`P = 63.21205588285576784...%`
+
 ## The algorithms
 
 ### `dist`
@@ -65,7 +70,7 @@ Optimized to use as little memory as possible, so we overwrite the results
 from step `s` in step `s+1`.
 This gives us precise results and works well until `N ~ 20`.
 
-The result for `N = 22`: `63.21060%`.
+The result for `N = 22`: `63.2106%`.
 
 An interesting observation:
 * intel Haswell up to and including TigerLake is really slow on this.
